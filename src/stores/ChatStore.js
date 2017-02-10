@@ -9,10 +9,12 @@ const DEFAULT_STATE = {
 	visitor: {},
 	agents: {},
 	chats: SortedMap(),
-	is_chatting: false
+	is_chatting: false,
+	last_non_visitor_msg_ts: 0
 };
 
 let isAgent = (nick) => { return nick.startsWith('agent:') };
+let isVisitor = (nick) => { return nick.startsWith('visitor') };
 
 // IMPT: Need to return on every case
 function update(state = DEFAULT_STATE, action) {
@@ -94,12 +96,20 @@ function update(state = DEFAULT_STATE, action) {
 				case 'chat.wait_queue':
 				case 'chat.request.rating':
 				case 'chat.msg':
+					const detail =  action.detail
+
 					new_state.chats = state.chats.concat({
 						[Date.now()]: {
-							...action.detail,
-							...member(state, action.detail)
+							...detail,
+							...member(state, detail)
 						}
 					});
+
+					// store last timestamp of message log that is not sent by visitor
+					if (!isVisitor(detail.nick)) {
+						new_state.last_non_visitor_msg_ts = detail.timestamp
+					}
+
 					return new_state;
 				case 'typing':
 					return {

@@ -23,7 +23,8 @@ class App extends Component {
     this.state = {
       theme: THEME,
       typing: false,
-      visible: false
+      visible: false,
+      visible_change_ts: Date.now()
     };
     this.timer = null;
     this.handleOnSubmit = this.handleOnSubmit.bind(this);
@@ -72,6 +73,18 @@ class App extends Component {
       visible: get('visible') || this.state.visible,
       theme: get('theme') || this.state.theme
     });
+  }
+
+  componentWillReceiveProps(nextProps) {
+    const last_non_visitor_msg_ts = nextProps.data.last_non_visitor_msg_ts
+
+    // new agent msg comes in when chat window is minimized
+    if (
+      !this.state.visible &&
+      last_non_visitor_msg_ts > this.state.visible_change_ts
+    ) {
+      this.setVisible(true)
+    }
   }
 
   handleOnChange() {
@@ -166,7 +179,8 @@ class App extends Component {
 
   setVisible(visible) {
     this.setState({
-      visible
+      visible,
+      visible_change_ts: Date.now()
     });
     set('visible', visible);
   }
